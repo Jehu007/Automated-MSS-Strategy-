@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MSS Trading">
+<title>MSS Trading</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0a0e17;--surface:#131722;--surface2:#1c2030;--text:#d1d4dc;--text-dim:#787b86;--green:#26a69a;--red:#ef5350;--blue:#2962ff;--orange:#f57c00;--border:#2a2e39;--radius:12px}
+@media(prefers-color-scheme:light){:root{--bg:#f0f3fa;--surface:#fff;--surface2:#f0f3fa;--text:#131722;--text-dim:#787b86;--border:#e0e3eb}}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;font-size:14px}
+.header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:700}
+.header .status{font-size:12px;color:var(--text-dim)}
+.tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:100}
+.tab{flex:1;padding:12px 0;text-align:center;font-size:11px;color:var(--text-dim);cursor:pointer;transition:.2s}
+.tab.active{color:var(--blue)}
+.tab svg{width:22px;height:22px;display:block;margin:0 auto 4px}
+.page{padding:16px;display:none}
+.page.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card h2{font-size:15px;margin-bottom:12px;color:var(--text)}
+.row{display:flex;gap:8px;margin-bottom:12px}
+.row>div{flex:1}
+label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px}
+input,select{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s;margin-bottom:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.signal-box{padding:16px;border-radius:var(--radius);margin-bottom:12px;text-align:center}
+.signal-long{background:rgba(38,166,154,.15);border:1px solid var(--green)}
+.signal-short{background:rgba(239,83,80,.15);border:1px solid var(--red)}
+.signal-none{background:var(--surface2);border:1px solid var(--border)}
+.signal-box .dir{font-size:22px;font-weight:800;margin-bottom:8px}
+.signal-long .dir{color:var(--green)}
+.signal-short .dir{color:var(--red)}
+.signal-box .details{font-size:13px;color:var(--text-dim);line-height:1.8}
+.signal-box .details b{color:var(--text)}
+.pair-btn{flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;text-align:center}
+.pair-btn.active{border-color:var(--blue);background:rgba(41,98,255,.1);color:var(--blue)}
+.tf-btn{flex:1;padding:10px 4px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-dim);font-size:11px;cursor:pointer;text-align:center}
+.tf-btn.active{border-color:var(--blue);background:rgba(41,98,255,.1);color:var(--blue)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-box{background:var(--surface2);border-radius:10px;padding:14px;text-align:center}
+.stat-box .val{font-size:22px;font-weight:700}
+.stat-box .lbl{font-size:11px;color:var(--text-dim);margin-top:4px}
+.trade-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.trade-item .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-open{background:var(--orange);color:#fff}
+.badge-win{background:var(--green);color:#fff}
+.badge-loss{background:var(--red);color:#fff}
+.badge-be{background:var(--text-dim);color:#fff}
+.trade-item .info{font-size:13px;color:var(--text-dim);line-height:1.6}
+.trade-item .info b{color:var(--text)}
+.delete-btn{color:var(--red);font-size:12px;cursor:pointer;float:right}
+.chart-container{position:relative;width:100%;height:280px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+#chartCanvas{width:100%;height:100%;display:block}
+.note{font-size:12px;color:var(--text-dim);margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px}
+.loading{display:none;text-align:center;padding:20px;color:var(--text-dim)}
+.loading.show{display:block}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-msg{background:rgba(239,83,80,.1);border:1px solid var(--red);border-radius:8px;padding:10px;font-size:13px;color:var(--red);margin-bottom:8px;display:none}
+.err-msg.show{display:block}
+.success-msg{background:rgba(38,166,154,.1);border:1px solid var(--green);border-radius:8px;padding:10px;font-size:13px;color:var(--green);margin-bottom:8px;display:none}
+.success-msg.show{display:block}
+select{appearance:none;background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D10%20height%3D6%20viewBox%3D0%200%2010%206%20xmlns%3Dhttp%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20stroke%3D%22%23787b86%22%20stroke-width%3D%221.5%22%20fill%3D%22none%22%2F%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>📊 MSS Trading</h1>
+<div class="status" id="statusBar">Prêt</div>
+</div>
+
+<!-- PAGE SIGNALS -->
+<div class="page active" id="page-signals">
+<div class="row">
+<button class="pair-btn active" data-pair="BTC" onclick="selectPair('BTC')">Bitcoin</button>
+<button class="pair-btn" data-pair="GOLD" onclick="selectPair('GOLD')">Or</button>
+</div>
+
+<div class="row" style="margin-bottom:8px">
+<button class="tf-btn active" data-tf="W" onclick="selectTF('W')">Weekly<br>H4 M15</button>
+<button class="tf-btn" data-tf="D" onclick="selectTF('D')">Daily<br>H1 M15</button>
+<button class="tf-btn" data-tf="H4" onclick="selectTF('H4')">H4<br>M15 M5</button>
+</div>
+
+<div class="row">
+<button class="btn btn-primary" style="flex:1" onclick="analyzeReal()">📡 Données réelles</button>
+<button class="btn btn-outline" style="flex:1" onclick="analyzeDemo()">🎬 Mode démo</button>
+</div>
+
+<div class="loading" id="loadingBox">
+<div class="spinner"></div>
+<div id="loadingText">Chargement...</div>
+</div>
+
+<div class="err-msg" id="errMsg"></div>
+<div class="success-msg" id="successMsg"></div>
+
+<div id="signalContainer"></div>
+
+<div class="chart-container">
+<canvas id="chartCanvas"></canvas>
+</div>
+
+<div class="card">
+<h2>⚙️ Réglages</h2>
+<div class="row">
+<div>
+<label>Capital ($)</label>
+<input type="number" id="capitalInput" value="10000" step="100">
+</div>
+<div>
+<label>Risque par trade (%)</label>
+<input type="number" id="riskInput" value="0.5" step="0.1" min="0.1" max="5">
+</div>
+</div>
+<div class="row">
+<div>
+<label>Force des swings</label>
+<input type="number" id="swingInput" value="3" min="1" max="10">
+</div>
+<div>
+<label>Multiplicateur momentum</label>
+<input type="number" id="momInput" value="1.8" step="0.1" min="1">
+</div>
+</div>
+<div class="row">
+<div>
+<label>Tolérance equal H/L (%)</label>
+<input type="number" id="tolInput" value="0.3" step="0.05" min="0.05">
+</div>
+</div>
+</div>
+</div>
+
+<!-- PAGE JOURNAL -->
+<div class="page" id="page-journal">
+<div class="card">
+<h2>📝 Nouveau trade</h2>
+<div class="row">
+<div>
+<label>Paire</label>
+<select id="jPair">
+<option>BTC</option>
+<option>GOLD</option>
+</select>
+</div>
+<div>
+<label>Sens</label>
+<select id="jDir">
+<option value="LONG">LONG</option>
+<option value="SHORT">SHORT</option>
+</select>
+</div>
+</div>
+<div class="row">
+<div>
+<label>Entrée</label>
+<input type="number" id="jEntry" step="any">
+</div>
+<div>
+<label>Stop</label>
+<input type="number" id="jStop" step="any">
+</div>
+<div>
+<label>TP</label>
+<input type="number" id="jTP" step="any">
+</div>
+</div>
+<div class="row">
+<div>
+<label>Statut</label>
+<select id="jStatus">
+<option value="open">Ouvert</option>
+<option value="win">Gagné</option>
+<option value="loss">Perdu</option>
+<option value="be">Breakeven</option>
+</select>
+</div>
+</div>
+<div class="row">
+<div>
+<label>Notes</label>
+<input type="text" id="jNotes" placeholder="Contexte, qualité, émotions...">
+</div>
+</div>
+<button class="btn btn-primary" onclick="addTrade()">+ Ajouter au journal</button>
+</div>
+
+<div class="row">
+<button class="btn btn-outline" style="flex:1" onclick="exportCSV()">📥 Export CSV</button>
+<button class="btn btn-outline" style="flex:1" onclick="clearJournal()">🗑️ Tout effacer</button>
+</div>
+
+<div id="tradesList"></div>
+</div>
+
+<!-- PAGE STATS -->
+<div class="page" id="page-stats">
+<div class="stat-grid" id="statsGrid"></div>
+<div class="card">
+<h2>📈 Répartition</h2>
+<div id="breakdown"></div>
+</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+<div class="tab active" onclick="showPage('signals')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 4 4 6-6"/></svg>
+Signaux
+</div>
+<div class="tab" onclick="showPage('journal')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h4"/></svg>
+Journal
+</div>
+<div class="tab" onclick="showPage('stats')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6" transform="translate(-1 0)"/></svg>
+Stats
+</div>
+</div>
+
+<script>
+// ============ STATE ============
+let currentPair='BTC', currentTF='W', chartData=null;
+const tfMap={W:{struct:'1wk',med:'4h',conf:'15m'},D:{struct:'1d',med:'1h',conf:'15m'},H4:{struct:'4h',med:'15m',conf:'5m'}};
+const pairTicker={BTC:{binance:'BTCUSDT'},GOLD:{yahoo:'GC=F'}};
+
+// ============ STORAGE ============
+function loadJournal(){return JSON.parse(localStorage.getItem('mss_journal')||'[]')}
+function saveJournal(t){localStorage.setItem('mss_journal',JSON.stringify(t))}
+function loadSettings(){return JSON.parse(localStorage.getItem('mss_settings')||'{}')}
+function saveSettings(){localStorage.setItem('mss_settings',JSON.stringify({capital:getVal('capitalInput'),risk:getVal('riskInput'),swing:getVal('swingInput'),mom:getVal('momInput'),tol:getVal('tolInput')}))}
+
+function getVal(id){return parseFloat(document.getElementById(id).value)||0}
+function getSettings(){const s=loadSettings();return{capital:s.capital||getVal('capitalInput'),risk:s.risk||getVal('riskInput'),swing:s.swing||getVal('swingInput'),mom:s.mom||getVal('momInput'),tol:s.tol||getVal('tolInput')}}
+
+// ============ UI ============
+function showPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['signals','journal','stats'][i]===p));if(p==='journal')renderTrades();if(p==='stats')renderStats()}
+function selectPair(p){currentPair=p;document.querySelectorAll('.pair-btn').forEach(b=>b.classList.toggle('active',b.dataset.pair===p))}
+function selectTF(t){currentTF=t;document.querySelectorAll('.tf-btn').forEach(b=>b.classList.toggle('active',b.dataset.tf===t))}
+function showLoading(txt){document.getElementById('loadingBox').classList.add('show');document.getElementById('loadingText').textContent=txt||'Chargement...';document.getElementById('statusBar').textContent=txt||'Chargement...'}
+function hideLoading(){document.getElementById('loadingBox').classList.remove('show')}
+function showErr(msg){const e=document.getElementById('errMsg');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),8000)}
+function showSuccess(msg){const e=document.getElementById('successMsg');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),5000)}
+function setStatus(s){document.getElementById('statusBar').textContent=s}
+
+// ============ DATA FETCH ============
+async function fetchBinance(symbol,interval,limit){
+const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit||300}`;
+const r=await fetch(url);
+if(!r.ok)throw new Error('Binance '+r.status);
+const d=await r.json();
+return d.map(c=>({t:c[0],o:+c[1],h:+c[2],l:+c[3],c:+c[4],v:+c[5]}));
+}
+
+async function fetchYahoo(ticker,range,interval){
+const proxy='https://corsproxy.io/?url=';
+const url=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=${range}&interval=${interval}`;
+const r=await fetch(proxy+encodeURIComponent(url));
+if(!r.ok)throw new Error('Yahoo '+r.status);
+const d=await r.json();
+const q=d.chart.result[0];
+return q.timestamp.map((t,i)=>({t:t*1000,o:q.indicators.quote[0].open[i],h:q.indicators.quote[0].high[i],l:q.indicators.quote[0].low[i],c:q.indicators.quote[0].close[i],v:q.indicators.quote[0].volume[i]||0})).filter(c=>c.o!=null);
+}
+
+async function fetchGoldData(range,interval){
+// Try Yahoo via multiple proxies
+const proxies=[
+'https://corsproxy.io/?url=',
+'https://api.allorigins.win/raw?url=',
+'https://cors-anywhere.herokuapp.com/'
+];
+const target=`https://query1.finance.yahoo.com/v8/finance/chart/GC=F?range=${range}&interval=${interval}`;
+for(let i=0;i<proxies.length;i++){
+try{
+const r=await fetch(proxies[i]+encodeURIComponent(target));
+if(!r.ok)continue;
+const d=await r.json();
+if(d.chart&&d.chart.result&&d.chart.result[0]){
+const q=d.chart.result[0];
+return q.timestamp.map((t,j)=>({t:t*1000,o:q.indicators.quote[0].open[j],h:q.indicators.quote[0].high[j],l:q.indicators.quote[0].low[j],c:q.indicators.quote[0].close[j],v:(q.indicators.quote[0].volume||[])[j]||0})).filter(c=>c.o!=null);
+}
+}catch(e){continue}
+}
+throw new Error('Tous les proxies Yahoo ont échoué');
+}
+
+// ============ GENERATE DEMO DATA ============
+function genDemo(bars){
+const data=[];let price=currentPair==='BTC'?95000:2900;
+for(let i=bars;i>0;i--){
+const drift=(Math.random()-0.48)*0.02;
+const o=price;
+const c=price*(1+drift);
+const h=Math.max(o,c)*(1+Math.random()*0.01);
+const l=Math.min(o,c)*(1-Math.random()*0.01);
+data.push({t:Date.now()-i*3600000,o,h,l,c,v:Math.random()*1000+100});
+price=c;
+}
+return data;
+}
+
+// ============ MSS ENGINE ============
+function findSwings(data,left,right){
+const swings=[];
+for(let i=left;i<data.length-right;i++){
+let isHigh=true,isLow=true;
+for(let j=i-left;j<=i+right;j++){
+if(j===i)continue;
+if(data[j].h>=data[i].h)isHigh=false;
+if(data[j].l<=data[i].l)isLow=false;
+}
+if(isHigh)swings.push({type:'high',idx:i,price:data[i].h,time:data[i].t});
+if(isLow)swings.push({type:'low',idx:i,price:data[i].l,time:data[i].t});
+}
+return swings;
+}
+
+function detectMSS(data,swings,swingN,momMult){
+// Find last significant break of structure
+const breaks=[];
+for(let i=1;i<swings.length;i++){
+const s=swings[i],prev=swings[i-1];
+const candle=data[s.idx];
+const bodySize=Math.abs(candle.c-candle.o);
+const avgBody=data.slice(Math.max(0,s.idx-20),s.idx).reduce((a,b)=>a+Math.abs(b.c-b.o),0)/Math.min(20,s.idx);
+const isMomentum=bodySize>avgBody*momMult;
+if(s.type==='high'&&s.price>prev.price){
+breaks.push({type:'bullish',idx:s.idx,price:s.price,momentum:isMomentum,swingIdx:i,candle});
+}else if(s.type==='low'&&s.price<prev.price){
+breaks.push({type:'bearish',idx:s.idx,price:s.price,momentum:isMomentum,swingIdx:i,candle});
+}
+}
+// Get last momentum break
+for(let i=breaks.length-1;i>=0;i--){
+if(breaks[i].momentum)return breaks[i];
+}
+// Or last break
+return breaks.length>0?breaks[breaks.length-1]:null;
+}
+
+function findMSSZone(data,msSignal){
+// Last candle of the extension before MSS
+const idx=msSignal.idx;
+// Find the swing before the MSS candle
+let zoneIdx=idx-1;
+// The MSS zone is the range of the last pivot candle before the break
+for(let i=idx-1;i>=0;i--){
+const bodyUp=data[i].c>data[i].o;
+const isBullMSS=msSignal.type==='bullish';
+// For bullish MSS: last down candle before impulse
+// For bearish MSS: last up candle before impulse
+if(isBullMSS&&bodyUp===false){zoneIdx=i;break}
+if(!isBullMSS&&bodyUp===true){zoneIdx=i;break}
+if(i===0){zoneIdx=idx-1}
+}
+return{high:data[idx-1].h,low:data[idx-1].l,idx:zoneIdx,candle:data[idx-1]};
+}
+
+function findOB(data,msSignal){
+// Last opposite candle before the impulse (100% OB)
+const idx=msSignal.idx;
+for(let i=idx-1;i>=0;i--){
+const bodyUp=data[i].c>data[i].o;
+if(msSignal.type==='bullish'&&!bodyUp)return{high:data[i].h,low:data[i].l,idx:i,candle:data[i]};
+if(msSignal.type==='bearish'&&bodyUp)return{high:data[i].h,low:data[i].l,idx:i,candle:data[i]};
+}
+return null;
+}
+
+function checkEngulfing(prev,curr,direction){
+if(direction==='bullish')return curr.c>curr.o&&curr.o<=prev.c&&curr.c>prev.o&&curr.c>prev.h;
+return curr.c<curr.o&&curr.o>=prev.c&&curr.c<prev.o&&curr.c<prev.l;
+}
+
+function checkThreeCandles(d1,d2,d3,direction){
+if(direction==='bullish'){
+return d1.c<d1.o&&d2.c>d2.o&&d3.c>d3.o&&d3.c>d1.h;
+}
+return d1.c>d1.o&&d2.c<d2.o&&d3.c<d3.o&&d3.c<d1.l;
+}
+
+function findConfirmation(data,obZone,direction,lookback){
+// Look for engulfing or three candles pattern in the OB zone
+const start=obZone.idx;
+for(let i=Math.max(start,2);i<Math.min(data.length,start+lookback);i++){
+if(checkEngulfing(data[i-1],data[i],direction))return{type:'engulfing',idx:i,price:data[i].c};
+if(i>=2&&checkThreeCandles(data[i-2],data[i-1],data[i],direction))return{type:'three-candles',idx:i,price:data[i].c};
+}
+return null;
+}
+
+function findLiquidity(data,swings,direction,tol){
+// Find equal highs/lows or nearest swing in trade direction
+const tolPrice=tol/100;
+if(direction==='bullish'){
+// Look for equal highs or next swing high
+const highs=swings.filter(s=>s.type==='high').sort((a,b)=>a.price-b.price);
+for(let i=0;i<highs.length-1;i++){
+if(Math.abs(highs[i].price-highs[i+1].price)/highs[i].price<tolPrice)return highs[i+1].price;
+}
+return highs.length>0?Math.max(...highs.map(h=>h.price)):null;
+}else{
+const lows=swings.filter(s=>s.type==='low').sort((a,b)=>b.price-a.price);
+for(let i=0;i<lows.length-1;i++){
+if(Math.abs(lows[i].price-lows[i+1].price)/lows[i].price<tolPrice)return lows[i+1].price;
+}
+return lows.length>0?Math.min(...lows.map(l=>l.price)):null;
+}
+}
+
+function findTP(data,swings,entry,stop,direction,tol){
+// Priority 1: MSS in opposite direction
+const s=findSettings();
+const tpSwings=findSwings(data,s.swing,s.swing);
+const tpMSS=detectMSS(data,tpSwings,s.swing,s.mom);
+// Check if there's a future opposite MSS
+for(let i=0;i<tpSwings.length;i++){
+const sw=tpSwings[i];
+if(sw.idx<data.length){
+if(direction==='bullish'&&sw.type==='low'&&sw.price<entry){
+// Bearish break after our entry
+for(let j=swings.length-1;j>=0;j--){
+if(swings[j].type==='low'&&swings[j].idx>sw.idx&&swings[j].price<sw.price){
+return{price:swings[j].price,type:'MSS contraire',idx:swings[j].idx};
+}
+}
+}
+if(direction==='bearish'&&sw.type==='high'&&sw.price>entry){
+for(let j=swings.length-1;j>=0;j--){
+if(swings[j].type==='high'&&swings[j].idx>sw.idx&&swings[j].price>sw.price){
+return{price:swings[j].price,type:'MSS contraire',idx:swings[j].idx};
+}
+}
+}
+}
+}
+// Priority 2: next liquidity
+const liq=findLiquidity(data,swings,direction,tol);
+if(liq)return{price:liq,type:'Liquidité (equal H/L)',idx:null};
+return null;
+}
+
+function analyzeMSS(structData,medData,confData,settings){
+const swingN=settings.swing||3;
+const momMult=settings.mom||1.8;
+const tol=settings.tol||0.3;
+
+// Step 1: Find MSS on structure timeframe
+const structSwings=findSwings(structData,swingN,swingN);
+if(structSwings.length<3)return{signal:'none',reason:'Pas assez de swings sur la structure'};
+const mss=detectMSS(structData,structSwings,swingN,momMult);
+if(!mss)return{signal:'none',reason:'Aucun MSS détecté sur la structure'};
+const direction=mss.type==='bullish'?'bullish':'bearish';
+
+// Step 2: MSS Zone
+const mssZone=findMSSZone(structData,mss);
+if(!mssZone)return{signal:'none',reason:'MSS zone introuvable'};
+
+// Step 3: Retracement + break on medium TF
+const medSwings=findSwings(medData,swingN,swingN);
+if(medSwings.length<3)return{signal:'none',reason:'Pas assez de swings sur le TF médium',mss,mssZone};
+const medBreak=detectMSS(medData,medSwings,swingN,momMult);
+if(!medBreak||medBreak.type!==direction){
+return{signal:'none',reason:'Pas de cassure médium dans le sens du MSS',mss,mssZone,direction};
+}
+
+// Step 4: OB 100%
+const ob=findOB(medData,medBreak);
+if(!ob)return{signal:'none',reason:'OB 100% introuvable',mss,mssZone,direction};
+
+// Step 5: Retracement in OB + confirmation on confirmation TF
+const confSwings=findSwings(confData,swingN,swingN);
+const confirmation=findConfirmation(confData,ob,direction,30);
+if(!confirmation){
+return{signal:'wait',reason:'En attente de confirmation (avalement/three candles) dans l\'OB',mss,mssZone,ob,direction,medBreak};
+}
+
+// Calculate entry, stop, TP
+const entry=confirmation.price;
+const stop=direction==='bullish'?ob.low:ob.high;
+const risk=Math.abs(entry-stop);
+if(risk===0)return{signal:'none',reason:'Risque nul',mss,mssZone,ob,confirmation};
+
+// TP
+const tp=findTP(medData,medSwings,entry,stop,direction,tol);
+const tpPrice=tp?tp.price:null;
+const rr=tpPrice?Math.abs(tpPrice-entry)/risk:null;
+
+// Position size
+const riskAmount=settings.capital*(settings.risk/100);
+const posSize=riskAmount/risk;
+
+return{
+signal:direction==='bullish'?'LONG':'SHORT',
+direction,entry,stop,
+tp:tpPrice,tpType:tp?tp.type:null,
+rr,riskAmount,posSize,risk,
+mss,mssZone,ob,confirmation,medBreak,
+structSwings:structSwings.length,medSwings:medSwings.length,confSwings:confSwings.length
+};
+}
+
+// ============ ANALYZE ============
+async function analyzeReal(){
+saveSettings();
+showLoading('Téléchargement des données...');
+document.getElementById('signalContainer').innerHTML='';
+chartData=null;
+try{
+const s=getSettings();
+const tf=tfMap[currentTF];
+let structData,medData,confData;
+
+if(currentPair==='BTC'){
+showLoading('BTC: téléchargement '+tf.struct+'...');
+structData=await fetchBinance('BTCUSDT',tf.struct,300);
+showLoading('BTC: téléchargement '+tf.med+'...');
+medData=await fetchBinance('BTCUSDT',tf.med,300);
+showLoading('BTC: téléchargement '+tf.conf+'...');
+confData=await fetchBinance('BTCUSDT',tf.conf,300);
+}else{
+showLoading('Or: téléchargement '+tf.struct+'...');
+const ranges={'1wk':'5y','1d':'2y','4h':'1y','1h':'1y','15m':'60d','5m':'5d'};
+structData=await fetchGoldData(ranges[tf.struct],tf.struct);
+showLoading('Or: téléchargement '+tf.med+'...');
+medData=await fetchGoldData(ranges[tf.med],tf.med);
+showLoading('Or: téléchargement '+tf.conf+'...');
+confData=await fetchGoldData(ranges[tf.conf],tf.conf);
+}
+
+if(!structData||structData.length<30)throw new Error('Données structure insuffisantes');
+if(!medData||medData.length<30)throw new Error('Données médium insuffisantes');
+if(!confData||confData.length<30)throw new Error('Données confirmation insuffisantes');
+
+chartData=medData;
+showLoading('Analyse MSS en cours...');
+const result=analyzeMSS(structData,medData,confData,s);
+hideLoading();
+renderSignal(result,s);
+drawChart(medData,result);
+setStatus('Analyse terminée');
+showSuccess('Données réelles chargées avec succès');
+}catch(e){
+hideLoading();
+showErr('Erreur: '+e.message+'. Essayez le mode démo ou vérifiez votre connexion.');
+setStatus('Erreur');
+}
+}
+
+function analyzeDemo(){
+saveSettings();
+showLoading('Génération des données de démonstration...');
+document.getElementById('signalContainer').innerHTML='';
+try{
+const s=getSettings();
+const structData=genDemo(200);
+const medData=genDemo(200);
+const confData=genDemo(200);
+chartData=medData;
+const result=analyzeMSS(structData,medData,confData,s);
+hideLoading();
+renderSignal(result,s);
+drawChart(medData,result);
+setStatus('Mode démo');
+showSuccess('Mode démo: moteur MSS exécuté sur données simulées');
+}catch(e){
+hideLoading();
+showErr('Erreur démo: '+e.message);
+}
+}
+
+function renderSignal(r,s){
+const c=document.getElementById('signalContainer');
+if(r.signal==='none'){
+c.innerHTML=`<div class="signal-box signal-none"><div class="dir">⏸️ Aucun signal</div><div class="details">${r.reason||'Aucun setup valide actuellement.'}<br>Structure: ${r.structSwings||0} swings | Médium: ${r.medSwings||0} swings | Conf: ${r.confSwings||0} swings</div></div>`;
+return;
+}
+if(r.signal==='wait'){
+c.innerHTML=`<div class="signal-box signal-none"><div class="dir">⏳ En attente</div><div class="details">${r.reason}<br><b>MSS Zone:</b> ${r.mssZone.low.toFixed(2)} - ${r.mssZone.high.toFixed(2)}<br><b>OB 100%:</b> ${r.ob.low.toFixed(2)} - ${r.ob.high.toFixed(2)}<br><b>Sens:</b> ${r.direction==='bullish'?'Haussier':'Baissier'}</div></div>`;
+return;
+}
+const isLong=r.signal==='LONG';
+const tpTxt=r.tp?r.tp.toFixed(2):'Non défini';
+const rrTxt=r.rr?r.rr.toFixed(2):'N/A';
+const tpType=r.tpType?('('+r.tpType+')'):'';
+c.innerHTML=`<div class="signal-box ${isLong?'signal-long':'signal-short'}">
+<div class="dir">${isLong?'🟢 LONG':'🔴 SHORT'} ${currentPair}</div>
+<div class="details">
+<b>Entrée:</b> ${r.entry.toFixed(2)}<br>
+<b>Stop:</b> ${r.stop.toFixed(2)}<br>
+<b>TP:</b> ${tpTxt} ${tpType}<br>
+<b>R:R:</b> ${rrTxt}<br>
+<b>Risque:</b> ${r.risk.toFixed(2)} (${s.risk}% = $${r.riskAmount.toFixed(2)})<br>
+<b>Taille position:</b> ${r.posSize.toFixed(4)} unités<br>
+<b>OB 100%:</b> ${r.ob.low.toFixed(2)} - ${r.ob.high.toFixed(2)}<br>
+<b>Confirmation:</b> ${r.confirmation.type}<br>
+<b>Timeframe:</b> ${currentTF} (${tfMap[currentTF].struct}→${tfMap[currentTF].med}→${tfMap[currentTF].conf})
+</div>
+</div>
+<button class="btn btn-green" onclick="addTradeFromSignal(${r.entry},${r.stop},${r.tp},'${r.signal}')">+ Ajouter au journal</button>`;
+}
+
+function addTradeFromSignal(entry,stop,tp,dir){
+document.getElementById('jPair').value=currentPair;
+document.getElementById('jDir').value=dir;
+document.getElementById('jEntry').value=entry;
+document.getElementById('jStop').value=stop;
+document.getElementById('jTP').value=tp||'';
+document.getElementById('jStatus').value='open';
+showPage('journal');
+showSuccess('Trade pré-rempli, ajoutez vos notes puis validez');
+}
+
+// ============ CHART ============
+function drawChart(data,result){
+const canvas=document.getElementById('chartCanvas');
+const ctx=canvas.getContext('2d');
+const dpr=window.devicePixelRatio||1;
+const w=canvas.offsetWidth,h=canvas.offsetHeight;
+canvas.width=w*dpr;canvas.height=h*dpr;
+ctx.scale(dpr,dpr);
+ctx.clearRect(0,0,w,h);
+
+// Background
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface');
+ctx.fillRect(0,0,w,h);
+
+const visible=data.slice(-60);
+if(visible.length<2)return;
+
+// Price range
+let minP=Infinity,maxP=-Infinity;
+visible.forEach(c=>{minP=Math.min(minP,c.l);maxP=Math.max(maxP,c.h)});
+if(result&&result.ob){minP=Math.min(minP,result.ob.low);maxP=Math.max(maxP,result.ob.high)}
+if(result&&result.entry){minP=Math.min(minP,result.entry);maxP=Math.max(maxP,result.entry)}
+if(result&&result.stop){minP=Math.min(minP,result.stop);maxP=Math.max(maxP,result.stop)}
+if(result&&result.tp){minP=Math.min(minP,result.tp);maxP=Math.max(maxP,result.tp)}
+const pad=(maxP-minP)*0.1;minP-=pad;maxP+=pad;
+const range=maxP-minP;if(range<=0)return;
+
+const cw=w/visible.length;
+const ch=h-30;
+
+// Draw candles
+visible.forEach((c,i)=>{
+const x=i*cw+cw/2;
+const yO=ch-((c.o-minP)/range)*ch;
+const yC=ch-((c.c-minP)/range)*ch;
+const yH=ch-((c.h-minP)/range)*ch;
+const yL=ch-((c.l-minP)/range)*ch;
+const isUp=c.c>=c.o;
+const color=isUp?'#26a69a':'#ef5350';
+// Wick
+ctx.strokeStyle=color;ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(x,yH);ctx.lineTo(x,yL);ctx.stroke();
+// Body
+ctx.fillStyle=color;
+const bw=cw*0.6;
+ctx.fillRect(x-bw/2,Math.min(yO,yC),bw,Math.max(1,Math.abs(yC-yO)));
+});
+
+// Draw levels
+function drawLine(price,color,label){
+if(!price||price<minP||price>maxP)return;
+const y=ch-((price-minP)/range)*ch;
+ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([5,5]);
+ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();
+ctx.setLineDash([]);
+ctx.fillStyle=color;ctx.font='10px sans-serif';
+ctx.fillText(label+price.toFixed(2),8,y-4);
+}
+
+if(result){
+if(result.ob){
+const yH=ch-((result.ob.high-minP)/range)*ch;
+const yL=ch-((result.ob.low-minP)/range)*ch;
+ctx.fillStyle='rgba(245,124,0,0.15)';
+ctx.fillRect(0,yH,w,yL-yH);
+}
+drawLine(result.entry,'#2962ff','E: ');
+drawLine(result.stop,'#ef5350','SL: ');
+if(result.tp)drawLine(result.tp,'#26a69a','TP: ');
+}
+
+// Bottom price labels
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text-dim');
+ctx.font='10px sans-serif';
+ctx.fillText(maxP.toFixed(2),4,14);
+ctx.fillText(minP.toFixed(2),4,ch-4);
+}
+
+// ============ JOURNAL ============
+function addTrade(){
+const t={id:Date.now(),pair:document.getElementById('jPair').value,dir:document.getElementById('jDir').value,entry:getVal('jEntry'),stop:getVal('jStop'),tp:getVal('jTP'),status:document.getElementById('jStatus').value,notes:document.getElementById('jNotes').value,date:new Date().toLocaleDateString('fr-FR')};
+if(!t.entry||!t.stop){showErr('Entrée et stop obligatoires');return}
+const trades=loadJournal();trades.unshift(t);saveJournal(trades);
+document.getElementById('jEntry').value='';document.getElementById('jStop').value='';document.getElementById('jTP').value='';document.getElementById('jNotes').value='';
+renderTrades();showSuccess('Trade ajouté au journal');
+}
+
+function updateStatus(id,status){
+const trades=loadJournal();const t=trades.find(x=>x.id===id);if(t){t.status=status;saveJournal(trades);renderTrades();renderStats()}
+}
+
+function deleteTrade(id){
+const trades=loadJournal().filter(x=>x.id!==id);saveJournal(trades);renderTrades();renderStats()
+}
+
+function clearJournal(){
+if(!confirm('Effacer tout le journal?'))return;
+localStorage.removeItem('mss_journal');renderTrades();renderStats();showSuccess('Journal effacé')
+}
+
+function renderTrades(){
+const trades=loadJournal();
+const c=document.getElementById('tradesList');
+if(trades.length===0){c.innerHTML='<div class="card" style="text-align:center;color:var(--text-dim)">Aucun trade dans le journal</div>';return}
+const s=getSettings();
+c.innerHTML=trades.map(t=>{
+const risk=Math.abs(t.entry-t.stop);
+const riskAmount=s.capital*(s.risk/100);
+const rr=t.tp&&risk>0?Math.abs(t.tp-t.entry)/risk:0;
+let pnl=0;
+if(t.status==='win'&&t.tp)pnl=Math.abs(t.tp-t.entry)/risk*riskAmount;
+if(t.status==='loss')pnl=-riskAmount;
+const badgeClass={open:'badge-open',win:'badge-win',loss:'badge-loss',be:'badge-be'}[t.status];
+const badgeText={open:'Ouvert',win:'Gagné',loss:'Perdu',be:'BE'}[t.status];
+return`<div class="trade-item">
+<div class="top">
+<span><b>${t.pair}</b> ${t.dir==='LONG'?'🟢':'🔴'} ${t.dir}</span>
+<span class="badge ${badgeClass}">${badgeText}</span>
+</div>
+<div class="info">
+<b>Entrée:</b> ${t.entry} | <b>SL:</b> ${t.stop} | <b>TP:</b> ${t.tp||'-'}<br>
+<b>R:R:</b> ${rr.toFixed(2)} | <b>P&L:</b> ${pnl>=0?'+':''}$${pnl.toFixed(2)}<br>
+<b>Date:</b> ${t.date}${t.notes?'<br><b>Notes:</b> '+t.notes:''}
+</div>
+${t.status==='open'?`<div class="row" style="margin-top:8px">
+<button class="btn btn-green" style="flex:1;padding:8px;font-size:12px" onclick="updateStatus(${t.id},'win')">✓ Gagné</button>
+<button class="btn btn-red" style="flex:1;padding:8px;font-size:12px" onclick="updateStatus(${t.id},'loss')">✗ Perdu</button>
+<button class="btn btn-outline" style="flex:1;padding:8px;font-size:12px" onclick="updateStatus(${t.id},'be')">≈ BE</button>
+</div>`:''}
+<div style="margin-top:6px"><span class="delete-btn" onclick="deleteTrade(${t.id})">🗑️ Supprimer</span></div>
+</div>`;
+}).join('');
+}
+
+// ============ STATS ============
+function renderStats(){
+const trades=loadJournal();
+const c=document.getElementById('statsGrid');
+const b=document.getElementById('breakdown');
+if(trades.length===0){
+c.innerHTML='<div class="card" style="grid-column:1/3;text-align:center;color:var(--text-dim)">Aucune donnée statistique</div>';
+b.innerHTML='<p style="color:var(--text-dim)">Ajoutez des trades pour voir vos statistiques</p>';
+return;
+}
+const s=getSettings();
+const wins=trades.filter(t=>t.status==='win');
+const losses=trades.filter(t=>t.status==='loss');
+const total=trades.length;const closed=wins.length+losses.length;
+const winRate=closed>0?(wins.length/closed*100):0;
+const riskAmount=s.capital*(s.risk/100);
+let totalPnL=0;wins.forEach(t=>{const r=Math.abs(t.entry-t.stop);if(r>0&&t.tp)totalPnL+=Math.abs(t.tp-t.entry)/r*riskAmount});
+losses.forEach(()=>totalPnL-=riskAmount);
+const totalR=trades.filter(t=>t.tp&&t.entry&&t.stop).reduce((a,t)=>{const r=Math.abs(t.entry-t.stop);return a+(r>0?Math.abs(t.tp-t.entry)/r:0)},0);
+const avgRR=trades.length>0?(totalR/trades.length):0;
+c.innerHTML=`
+<div class="stat-box"><div class="val">${total}</div><div class="lbl">Total trades</div></div>
+<div class="stat-box"><div class="val" style="color:${winRate>=50?'var(--green)':'var(--red)'}">${winRate.toFixed(1)}%</div><div class="lbl">Win Rate</div></div>
+<div class="stat-box"><div class="val" style="color:${totalPnL>=0?'var(--green)':'var(--red)'}">${totalPnL>=0?'+':''}$${totalPnL.toFixed(2)}</div><div class="lbl">P&L Total</div></div>
+<div class="stat-box"><div class="val">${avgRR.toFixed(2)}</div><div class="lbl">R:R moyen</div></div>
+<div class="stat-box"><div class="val">${wins.length}</div><div class="lbl">Gagnants</div></div>
+<div class="stat-box"><div class="val">${losses.length}</div><div class="lbl">Perdants</div></div>
+`;
+const btc=trades.filter(t=>t.pair==='BTC').length;
+const gold=trades.filter(t=>t.pair==='GOLD').length;
+const longs=trades.filter(t=>t.dir==='LONG').length;
+const shorts=trades.filter(t=>t.dir==='SHORT').length;
+b.innerHTML=`
+<div style="display:flex;gap:8px;margin-bottom:8px">
+<div class="stat-box" style="flex:1"><div class="val">${btc}</div><div class="lbl">BTC</div></div>
+<div class="stat-box" style="flex:1"><div class="val">${gold}</div><div class="lbl">Or</div></div>
+</div>
+<div style="display:flex;gap:8px">
+<div class="stat-box" style="flex:1"><div class="val" style="color:var(--green)">${longs}</div><div class="lbl">LONG</div></div>
+<div class="stat-box" style="flex:1"><div class="val" style="color:var(--red)">${shorts}</div><div class="lbl">SHORT</div></div>
+</div>`;
+}
+
+// ============ EXPORT CSV ============
+function exportCSV(){
+const trades=loadJournal();
+if(trades.length===0){showErr('Journal vide');return}
+let csv='Date,Paire,Sens,Entree,Stop,TP,Statut,Notes\n';
+trades.forEach(t=>{csv+=`${t.date},${t.pair},${t.dir},${t.entry},${t.stop},${t.tp||''},${t.status},"${t.notes||''}"\n`});
+const blob=new Blob([csv],{type:'text/csv'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');a.href=url;a.download='mss_journal.csv';a.click();
+URL.revokeObjectURL(url);showSuccess('CSV exporté');
+}
+
+// ============ INIT ============
+(function init(){
+const s=loadSettings();
+if(s.capital)document.getElementById('capitalInput').value=s.capital;
+if(s.risk)document.getElementById('riskInput').value=s.risk;
+if(s.swing)document.getElementById('swingInput').value=s.swing;
+if(s.mom)document.getElementById('momInput').value=s.mom;
+if(s.tol)document.getElementById('tolInput').value=s.tol;
+setStatus('Prêt - Mode démo ou Données réelles');
+})();
+</script>
+</body>
+</html>
